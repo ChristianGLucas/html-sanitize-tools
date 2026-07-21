@@ -19,6 +19,11 @@ import { RemovedItem, Report } from '../gen/messages_pb';
 /** Hard cap on input size, enforced on the RAW string before any parsing. */
 export const MAX_HTML_BYTES = 2 * 1024 * 1024; // 2 MiB
 
+/** Hard cap on ValidateAttribute's tag/attribute/value fields — these never
+ * go through checkSize (they're not `html`), so they need their own bound
+ * before reaching DOMPurify's regex-based URI/attribute-name checks. */
+export const MAX_ATTRIBUTE_FIELD_BYTES = 64 * 1024; // 64 KiB
+
 /** Cap on how many individual removal entries the report lists (removed_count
  * still reflects the true total even when the list itself is capped). */
 const MAX_REPORT_ITEMS = 200;
@@ -34,6 +39,18 @@ export function checkSize(html: string): string | null {
   const bytes = Buffer.byteLength(html, 'utf8');
   if (bytes > MAX_HTML_BYTES) {
     return `input html is ${bytes} bytes, which exceeds the ${MAX_HTML_BYTES}-byte cap`;
+  }
+  return null;
+}
+
+/**
+ * Reject an oversized tag/attribute/value field for ValidateAttribute, on
+ * the RAW string before it reaches DOMPurify's internal regex checks.
+ */
+export function checkAttributeFieldSize(name: string, value: string): string | null {
+  const bytes = Buffer.byteLength(value, 'utf8');
+  if (bytes > MAX_ATTRIBUTE_FIELD_BYTES) {
+    return `${name} is ${bytes} bytes, which exceeds the ${MAX_ATTRIBUTE_FIELD_BYTES}-byte cap`;
   }
   return null;
 }
