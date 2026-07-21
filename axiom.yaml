@@ -1,6 +1,16 @@
 name: christiangeorgelucas/html-sanitize-tools
 version: 0.1.0
 language: typescript
+description: >-
+  Composable Axiom nodes for sanitizing untrusted HTML/SVG/MathML markup to a
+  safe subset — stripping <script> tags, event-handler attributes, and
+  javascript:/data: URLs via two independent, permissively-licensed engines
+  (DOMPurify over headless jsdom, and pure-Node sanitize-html). Configurable
+  tag/attribute allow-lists; every sanitize call returns both the cleaned
+  markup and a structured report of what was removed. The security-sanitization
+  counterpart to html-tools (which parses/extracts rather than sanitizes) —
+  both use the same `html` string field so they compose directly in a flow.
+  Stateless, deterministic, offline: no network fetches, no script execution.
 nodes:
     - name: SanitizeHtml
       description: 'Sanitize untrusted HTML to a safe subset using DOMPurify (running headless over jsdom, no real browser). Strips <script>/<style> tags, event-handler attributes (onclick, onerror, ...), javascript:/vbscript: URLs, and any tag/attribute not on the allow-list; optionally allows SVG and/or MathML through the same allow-list. Returns the cleaned markup plus a report of everything removed.'
