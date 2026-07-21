@@ -1,0 +1,20 @@
+name: christiangeorgelucas/html-sanitize-tools
+version: 0.1.0
+language: typescript
+nodes:
+    - name: SanitizeHtml
+      description: 'Sanitize untrusted HTML to a safe subset using DOMPurify (running headless over jsdom, no real browser). Strips <script>/<style> tags, event-handler attributes (onclick, onerror, ...), javascript:/vbscript: URLs, and any tag/attribute not on the allow-list; optionally allows SVG and/or MathML through the same allow-list. Returns the cleaned markup plus a report of everything removed.'
+      input: SanitizeQuery
+      output: SanitizeResult
+    - name: SanitizeHtmlLite
+      description: Sanitize untrusted HTML to a safe subset using sanitize-html, a pure-Node/htmlparser2-based sanitizer with no DOM/jsdom dependency. A lighter-weight, independent second engine sharing SanitizeHtml's exact config and output contract — useful when jsdom's footprint isn't wanted, or to cross-check SanitizeHtml's result. Does not sanitize SVG/MathML (allow_svg/allow_math_ml are rejected as a structured error).
+      input: SanitizeQuery
+      output: SanitizeResult
+    - name: AuditHtml
+      description: Report what sanitizing this HTML WOULD remove (via DOMPurify), without returning modified markup. For pipelines that need to gate/flag on safety and either keep the original bytes untouched or explicitly reject unsafe input, rather than silently receiving altered content.
+      input: AuditQuery
+      output: AuditResult
+    - name: ValidateAttribute
+      description: Check whether a single tag/attribute/value triple would survive DOMPurify's default sanitization rules, without sanitizing a whole document — e.g. to validate one proposed attribute (a href, an img src) before inserting it into markup you build yourself.
+      input: AttributeQuery
+      output: AttributeResult

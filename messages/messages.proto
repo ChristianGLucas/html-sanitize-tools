@@ -1,0 +1,163 @@
+// This file defines the data contracts (messages) for your Axiom package.
+// Every node's --input and --output refers to a message defined here.
+//
+// Run `axiom create message <Name>` to scaffold a new message below.
+// Run `axiom generate` to compile these definitions into language bindings in gen/.
+//
+// DOCUMENTATION
+//   Comments written directly above a message or field declaration are extracted
+//   automatically at publish time and shown in the Axiom registry as documentation.
+//   Write your descriptions there — no separate doc files needed.
+//
+//   Leading comment  (no blank line before the declaration) → registry description ✓
+//   Detached comment (blank line before the declaration)    → ignored by registry  ✗
+//
+// This file is yours to edit. Axiom only appends new message blocks — it never
+// overwrites or removes content you have written.
+
+syntax = "proto3";
+
+package christiangeorgelucas.html_sanitize_tools;
+
+// A single element or attribute DOMPurify/sanitize-html removed (or would
+// remove) while cleaning the input, kept for the caller's audit trail.
+message RemovedItem {
+  // "element" (a whole tag was dropped) or "attribute" (a single attribute
+  // was dropped from an otherwise-kept tag).
+  string kind = 1;
+  // The tag name the removal happened on (e.g. "script", "img").
+  string tag = 2;
+  // The attribute name, when kind == "attribute". Empty for element removals.
+  string attribute = 3;
+  // The removed value: the attribute's value, or a truncated snippet of the
+  // removed element's outer HTML (capped to keep the report bounded).
+  string value = 4;
+}
+
+// A structured summary of everything a sanitize/audit call removed or would
+// remove, so a caller can see WHY the output differs from the input without
+// diffing HTML strings.
+message Report {
+  // Every removed element/attribute, in the order DOMPurify/sanitize-html
+  // encountered them. Capped at 200 entries; removed_count still reflects
+  // the true total.
+  repeated RemovedItem removed = 1;
+  // The true count of removed elements + attributes (may exceed removed.length
+  // if the list was capped).
+  int32 removed_count = 2;
+  // True if the input was NOT already clean under the given config, i.e.
+  // sanitizing it changed something.
+  bool was_modified = 3;
+}
+
+// Input shared by SanitizeHtml, SanitizeHtmlLite, and AuditHtml: the HTML (or
+// HTML fragment) to sanitize/audit, plus a configurable allow-list. Every
+// list field is optional — leave it empty to use the wrapped library's own
+// vetted defaults rather than an empty allow-list.
+message SanitizeQuery {
+  // The HTML/SVG/MathML markup to sanitize, as a UTF-8 string. Capped at 2 MiB
+  // (larger input returns a structured error rather than being parsed).
+  string html = 1;
+  // Restrict to exactly these tag names (lowercase, no angle brackets), e.g.
+  // ["p", "a", "strong"]. Empty means "use the library's default safe set".
+  repeated string allowed_tags = 2;
+  // Restrict to exactly these attribute names, applied globally across all
+  // kept tags (e.g. ["href", "title", "class"]). Empty means "use the
+  // library's default safe set".
+  repeated string allowed_attributes = 3;
+  // Allow SVG elements (circle, path, use, animate, ...) through the
+  // allow-list instead of stripping the whole svg subtree. Default false.
+  // Only takes effect when allowed_tags is empty — DOMPurify's profile
+  // mechanism overrides an explicit tag allow-list, so if you supply
+  // allowed_tags yourself, list the SVG tags you want directly in it.
+  bool allow_svg = 4;
+  // Allow MathML elements through the allow-list. Default false. Same
+  // allowed_tags interaction as allow_svg.
+  bool allow_math_ml = 5;
+  // Restrict URL-bearing attributes (href, src, ...) to these schemes, e.g.
+  // ["http", "https", "mailto"]. Empty means "use the library's default
+  // safe set" (which already excludes javascript:, vbscript:, data:text/html).
+  repeated string allowed_uri_schemes = 6;
+  // Allow HTML5 data-* attributes through. Default false.
+  bool allow_data_attributes = 7;
+  // Extra tags to strip even if they would otherwise be allowed (e.g. by
+  // allowed_tags or the library default). Applied after allowed_tags.
+  repeated string forbid_tags = 8;
+  // Extra attributes to strip even if otherwise allowed.
+  repeated string forbid_attributes = 9;
+  // Treat `html` as a complete document (preserve <html>/<head>/<body> and
+  // DOCTYPE) rather than an HTML fragment. Default false.
+  bool whole_document = 10;
+  // When a disallowed tag is stripped, ALSO discard its inner text content
+  // instead of keeping it inline. Default false, i.e. text content is kept by
+  // default — matching both wrapped libraries' own defaults (proto3's bool
+  // zero-value is intentionally "keep", not "strip").
+  bool strip_content_of_removed_tags = 11;
+}
+
+// Result of SanitizeHtml / SanitizeHtmlLite.
+message SanitizeResult {
+  // The cleaned markup — safe to render/store per the requested config.
+  string html = 1;
+  // What was removed to get from the input to `html`.
+  Report report = 2;
+  // Set to a human-readable message when `html` exceeds the size cap or the
+  // config itself is invalid (e.g. a malformed URI scheme); empty on success.
+  // Malformed/unparseable markup does NOT error — both libraries recover from
+  // it the same way real browsers do, returning best-effort cleaned output.
+  string error = 3;
+}
+
+// Input for AuditHtml: identical shape to SanitizeQuery (same allow-list
+// knobs), reused so a caller can audit with the exact config it would later
+// sanitize with.
+message AuditQuery {
+  // The HTML/SVG/MathML markup to audit. Same 2 MiB cap as SanitizeQuery.
+  string html = 1;
+  repeated string allowed_tags = 2;
+  repeated string allowed_attributes = 3;
+  bool allow_svg = 4;
+  bool allow_math_ml = 5;
+  repeated string allowed_uri_schemes = 6;
+  bool allow_data_attributes = 7;
+  repeated string forbid_tags = 8;
+  repeated string forbid_attributes = 9;
+  bool whole_document = 10;
+}
+
+// Result of AuditHtml: a report only — deliberately does NOT return modified
+// markup, for pipelines that want to gate/flag on safety and either keep the
+// original bytes untouched or explicitly reject, rather than silently
+// receiving altered content.
+message AuditResult {
+  // True if `html` required no changes under the given config (nothing in
+  // `report.removed`).
+  bool safe = 1;
+  // What sanitizing this input WOULD remove.
+  Report report = 2;
+  // Set on the same conditions as SanitizeResult.error.
+  string error = 3;
+}
+
+// Input for ValidateAttribute: one candidate tag/attribute/value triple to
+// check in isolation, without sanitizing a whole document.
+message AttributeQuery {
+  // The lowercase tag name the attribute would be attached to (e.g. "a",
+  // "img"). Required.
+  string tag = 1;
+  // The lowercase attribute name to check (e.g. "href", "onclick"). Required.
+  string attribute = 2;
+  // The candidate attribute value to validate (e.g. "javascript:alert(1)").
+  string value = 3;
+}
+
+// Result of ValidateAttribute.
+message AttributeResult {
+  // True if DOMPurify's own default rules would keep this exact
+  // tag/attribute/value triple during a sanitize() call; false if it would be
+  // stripped (wrong attribute for the tag, disallowed URI scheme, event
+  // handler, etc).
+  bool valid = 1;
+  // Set when tag or attribute is empty; empty on success.
+  string error = 2;
+}
