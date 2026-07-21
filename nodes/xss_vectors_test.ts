@@ -124,3 +124,35 @@ describe('Independent-oracle: OWASP-style XSS vectors neutralized (SanitizeHtmlL
     });
   }
 });
+
+describe('Documented (not a bug): style-attribute CSS is not sanitized', () => {
+  // Flagged by independent review. DOMPurify keeps a kept tag's `style`
+  // attribute verbatim (no CSS parsing), so a javascript: URL inside
+  // `url(...)` survives SanitizeHtml unmodified. This is NOT a live XSS
+  // vector in any current browser (javascript: inside CSS url() was an old
+  // IE-only bug, dead for well over a decade) — pinned here as a real,
+  // intentional behavior difference from SanitizeHtmlLite (which strips the
+  // whole `style` attribute by default), not silently left unspecified.
+  // See README.md's "Security notes" for the caller-facing version.
+  const html = '<div style="background:url(javascript:alert(1))">x</div>';
+
+  it('SanitizeHtml (DOMPurify) passes style content through unmodified', () => {
+    const result = sanitizeHtml(testContext, query(html));
+    expect(result.getHtml()).toBe(html);
+    expect(result.getReport()?.getWasModified()).toBe(false);
+  });
+
+  it('SanitizeHtml with forbid_attributes:["style"] removes it entirely', () => {
+    const q = query(html);
+    q.setForbidAttributesList(['style']);
+    const result = sanitizeHtml(testContext, q);
+    expect(result.getHtml().toLowerCase()).not.toContain('style');
+    expect(result.getHtml().toLowerCase()).not.toContain('javascript:');
+  });
+
+  it('SanitizeHtmlLite (sanitize-html) strips the style attribute by default', () => {
+    const result = sanitizeHtmlLite(testContext, query(html));
+    expect(result.getHtml().toLowerCase()).not.toContain('style');
+    expect(result.getHtml().toLowerCase()).not.toContain('javascript:');
+  });
+});

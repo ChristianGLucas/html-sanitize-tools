@@ -57,6 +57,16 @@ lists every removed element/attribute plus a `was_modified` flag.
   sanitize-html's default allow-list excludes `<img>`; DOMPurify's does not)
   are intentional — each engine's own vetted defaults are used as-is rather
   than reconciled into a false equivalence.
+- **`style` attribute content is NOT CSS-sanitized by SanitizeHtml.**
+  DOMPurify keeps a kept tag's `style` attribute verbatim (it doesn't parse
+  CSS), so e.g. `background:url(javascript:alert(1))` inside a `style` value
+  passes through unmodified. This is not exploitable in any current browser —
+  `javascript:` URLs inside CSS `url()` were a browser bug that no shipping
+  browser has had in well over a decade — but if you don't trust the CSS
+  itself (e.g. exfiltration-via-attribute-selector concerns), pass
+  `forbid_attributes: ["style"]`. SanitizeHtmlLite (sanitize-html) instead
+  strips the whole `style` attribute by default — a real, intentional
+  difference between the two engines' defaults, not a bug in either one.
 
 ## License
 
