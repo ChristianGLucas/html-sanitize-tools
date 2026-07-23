@@ -1,6 +1,6 @@
 # html-sanitize-tools
 
-Composable [Axiom](https://axiom.dev) nodes for sanitizing untrusted HTML/SVG
+Composable [Axiom](https://axiomide.com) nodes for sanitizing untrusted HTML/SVG
 markup — built for the Axiom marketplace.
 
 This is the **security-sanitization** counterpart to
