@@ -55,8 +55,7 @@ message Report {
 // list field is optional — leave it empty to use the wrapped library's own
 // vetted defaults rather than an empty allow-list.
 message SanitizeQuery {
-  // The HTML/SVG/MathML markup to sanitize, as a UTF-8 string. Capped at 2 MiB
-  // (larger input returns a structured error rather than being parsed).
+  // The HTML/SVG/MathML markup to sanitize, as a UTF-8 string.
   string html = 1;
   // Restrict to exactly these tag names (lowercase, no angle brackets), e.g.
   // ["p", "a", "strong"]. Empty means "use the library's default safe set".
@@ -101,8 +100,8 @@ message SanitizeResult {
   string html = 1;
   // What was removed to get from the input to `html`.
   Report report = 2;
-  // Set to a human-readable message when `html` exceeds the size cap or the
-  // config itself is invalid (e.g. a malformed URI scheme); empty on success.
+  // Set to a human-readable message when the config itself is invalid (e.g.
+  // a malformed URI scheme); empty on success.
   // Malformed/unparseable markup does NOT error — both libraries recover from
   // it the same way real browsers do, returning best-effort cleaned output.
   string error = 3;
@@ -112,7 +111,7 @@ message SanitizeResult {
 // knobs), reused so a caller can audit with the exact config it would later
 // sanitize with.
 message AuditQuery {
-  // The HTML/SVG/MathML markup to audit. Same 2 MiB cap as SanitizeQuery.
+  // The HTML/SVG/MathML markup to audit.
   string html = 1;
   repeated string allowed_tags = 2;
   repeated string allowed_attributes = 3;
