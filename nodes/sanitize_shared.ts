@@ -16,44 +16,12 @@ import sanitizeHtmlLib from 'sanitize-html';
 import { Parser as HtmlParser } from 'htmlparser2';
 import { RemovedItem, Report } from '../gen/messages_pb';
 
-/** Hard cap on input size, enforced on the RAW string before any parsing. */
-export const MAX_HTML_BYTES = 2 * 1024 * 1024; // 2 MiB
-
-/** Hard cap on ValidateAttribute's tag/attribute/value fields — these never
- * go through checkSize (they're not `html`), so they need their own bound
- * before reaching DOMPurify's regex-based URI/attribute-name checks. */
-export const MAX_ATTRIBUTE_FIELD_BYTES = 64 * 1024; // 64 KiB
-
 /** Cap on how many individual removal entries the report lists (removed_count
  * still reflects the true total even when the list itself is capped). */
 const MAX_REPORT_ITEMS = 200;
 
 /** Cap on how long a single reported snippet/value may be. */
 const MAX_VALUE_SNIPPET = 300;
-
-/**
- * Reject oversized input before it is ever handed to a parser. Returns a
- * human-readable error string, or null when the input is within bounds.
- */
-export function checkSize(html: string): string | null {
-  const bytes = Buffer.byteLength(html, 'utf8');
-  if (bytes > MAX_HTML_BYTES) {
-    return `input html is ${bytes} bytes, which exceeds the ${MAX_HTML_BYTES}-byte cap`;
-  }
-  return null;
-}
-
-/**
- * Reject an oversized tag/attribute/value field for ValidateAttribute, on
- * the RAW string before it reaches DOMPurify's internal regex checks.
- */
-export function checkAttributeFieldSize(name: string, value: string): string | null {
-  const bytes = Buffer.byteLength(value, 'utf8');
-  if (bytes > MAX_ATTRIBUTE_FIELD_BYTES) {
-    return `${name} is ${bytes} bytes, which exceeds the ${MAX_ATTRIBUTE_FIELD_BYTES}-byte cap`;
-  }
-  return null;
-}
 
 function truncate(s: string): string {
   if (s.length <= MAX_VALUE_SNIPPET) return s;

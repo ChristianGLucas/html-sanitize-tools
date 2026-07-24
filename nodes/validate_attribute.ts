@@ -1,6 +1,6 @@
 import { AttributeQuery, AttributeResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { isValidAttribute as domPurifyIsValidAttribute, checkAttributeFieldSize } from './sanitize_shared';
+import { isValidAttribute as domPurifyIsValidAttribute } from './sanitize_shared';
 
 /**
  * Check whether a single tag/attribute/value triple would survive DOMPurify's
@@ -17,15 +17,6 @@ export function validateAttribute(ax: AxiomContext, input: AttributeQuery): Attr
   const attribute = input.getAttribute();
   if (!tag || !attribute) {
     result.setError('tag and attribute are required');
-    return result;
-  }
-
-  const sizeError =
-    checkAttributeFieldSize('tag', tag) ||
-    checkAttributeFieldSize('attribute', attribute) ||
-    checkAttributeFieldSize('value', input.getValue());
-  if (sizeError) {
-    result.setError(sizeError);
     return result;
   }
 

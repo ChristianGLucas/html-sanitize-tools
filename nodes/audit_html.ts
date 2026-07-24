@@ -1,6 +1,6 @@
 import { AuditQuery, AuditResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkSize, checkConfig, runDompurify } from './sanitize_shared';
+import { checkConfig, runDompurify } from './sanitize_shared';
 
 /**
  * Report what sanitizing this HTML WOULD remove (via DOMPurify), without
@@ -14,11 +14,6 @@ import { checkSize, checkConfig, runDompurify } from './sanitize_shared';
 export function auditHtml(ax: AxiomContext, input: AuditQuery): AuditResult {
   const result = new AuditResult();
 
-  const sizeError = checkSize(input.getHtml());
-  if (sizeError) {
-    result.setError(sizeError);
-    return result;
-  }
   const configError = checkConfig(input);
   if (configError) {
     result.setError(configError);

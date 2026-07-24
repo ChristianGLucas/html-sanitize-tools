@@ -1,5 +1,5 @@
 name: christiangeorgelucas/html-sanitize-tools
-version: 0.1.0
+version: 0.1.1
 language: typescript
 description: >-
   Composable Axiom nodes for sanitizing untrusted HTML/SVG/MathML markup to a

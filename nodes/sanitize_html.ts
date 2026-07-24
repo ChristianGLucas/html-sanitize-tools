@@ -1,6 +1,6 @@
 import { SanitizeQuery, SanitizeResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkSize, checkConfig, runDompurify } from './sanitize_shared';
+import { checkConfig, runDompurify } from './sanitize_shared';
 
 /**
  * Sanitize untrusted HTML to a safe subset using DOMPurify, run headless over
@@ -16,11 +16,6 @@ import { checkSize, checkConfig, runDompurify } from './sanitize_shared';
 export function sanitizeHtml(ax: AxiomContext, input: SanitizeQuery): SanitizeResult {
   const result = new SanitizeResult();
 
-  const sizeError = checkSize(input.getHtml());
-  if (sizeError) {
-    result.setError(sizeError);
-    return result;
-  }
   const configError = checkConfig(input);
   if (configError) {
     result.setError(configError);
